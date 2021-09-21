@@ -36,7 +36,31 @@ function checksCreateTodosUserAvailability(request, response, next) {
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers;
+  const { task_id } = request.params;
+
+  const user = users.find((user) => user.username === username);
+  if (!user) {
+    return response.status(404).json({ error: "user not found" });
+  }
+
+  const checkUuidIsValid = validate(task_id);
+  if (!checkUuidIsValid) {
+    return response.status(400).json({ error: `Invalid task id` });
+  }
+
+  const todo = user.todos.find((todo) => todo.id === task_id);
+
+  if (!todo) {
+    return response
+      .status(404)
+      .json({ error: `Task ${task_id} does not exist` });
+  }
+
+  request.todo = todo;
+  request.user = user;
+
+  next();
 }
 
 function findUserById(request, response, next) {
