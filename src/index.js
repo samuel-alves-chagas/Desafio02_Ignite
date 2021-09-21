@@ -12,6 +12,10 @@ const users = [];
 function checksExistsUserAccount(request, response, next) {
   const { username } = request.headers;
 
+  if (!username) {
+    return response.status(400).json({ error: "username is required" });
+  }
+
   const user = users.find((user) => user.username === username);
 
   if (!user) {
@@ -22,49 +26,60 @@ function checksExistsUserAccount(request, response, next) {
 
   request.user = user;
 
-  next();
+  return next();
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
   const { user } = request;
 
   if (!user.pro && user.todos.length >= 10) {
-    return response.status(403);
+    return response.status(403).json({ error: "limit reached" });
   }
-
-  next();
+  return next();
 }
 
 function checksTodoExists(request, response, next) {
   const { username } = request.headers;
-  const { task_id } = request.params;
+  const { id } = request.params;
 
   const user = users.find((user) => user.username === username);
   if (!user) {
     return response.status(404).json({ error: "user not found" });
   }
 
-  const checkUuidIsValid = validate(task_id);
+  const checkUuidIsValid = validate(id);
   if (!checkUuidIsValid) {
     return response.status(400).json({ error: `Invalid task id` });
   }
 
-  const todo = user.todos.find((todo) => todo.id === task_id);
+  const todo = user.todos.find((todo) => todo.id === id);
 
   if (!todo) {
-    return response
-      .status(404)
-      .json({ error: `Task ${task_id} does not exist` });
+    return response.status(404).json({ error: `Task ${id} does not exist` });
   }
 
   request.todo = todo;
   request.user = user;
 
-  next();
+  return next();
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params;
+
+  if (!id) {
+    return response.status(400).json({ error: "User id is required" });
+  }
+
+  const user = users.find((user) => user.id === id);
+
+  if (!user) {
+    return response.status(404).json({ error: `User id ${id} does not exist` });
+  }
+
+  request.user = user;
+
+  return next();
 }
 
 app.post("/users", (request, response) => {
